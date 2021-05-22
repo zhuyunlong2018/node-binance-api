@@ -4869,7 +4869,12 @@ let api = function Binance( options = {} ) {
          */
         futuresChart: async function futuresChart( symbols, interval, callback, limit = 500 ) {
             let reconnect = () => {
-                if ( Binance.options.reconnect ) futuresChart( symbols, interval, callback, limit );
+                if ( Binance.options.reconnect ) {
+                    setTimeout( () => {
+                        // 5 second after reconnect
+                        futuresChart( symbols, interval, callback, limit );
+                    }, 5000 )
+                }
             };
 
             let futuresChartInit = symbol => {
@@ -4913,12 +4918,12 @@ let api = function Binance( options = {} ) {
                 if ( !isArrayUnique( symbols ) ) throw Error( 'futuresChart: "symbols" array cannot contain duplicate elements.' );
                 symbols.forEach( futuresChartInit );
                 let streams = symbols.map( symbol => `${ symbol.toLowerCase() }@kline_${ interval }` );
-                subscription = futuresSubscribe( streams, handleFuturesKlineStream, reconnect );
+                subscription = futuresSubscribe( streams, handleFuturesKlineStream, { reconnect } );
                 symbols.forEach( element => getFuturesKlineSnapshot( element, limit ) );
             } else {
                 let symbol = symbols;
                 futuresChartInit( symbol );
-                subscription = futuresSubscribeSingle( symbol.toLowerCase() + '@kline_' + interval, handleFuturesKlineStream, reconnect );
+                subscription = futuresSubscribeSingle( symbol.toLowerCase() + '@kline_' + interval, handleFuturesKlineStream, { reconnect } );
                 getFuturesKlineSnapshot( symbol, limit );
             }
             return subscription.endpoint;
